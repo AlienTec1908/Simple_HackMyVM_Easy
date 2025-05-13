@@ -1,0 +1,515 @@
+﻿﻿﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple - HackMyVM - Easy - Bericht</title> <!-- Titel angepasst -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../../horizontale-navbar.css">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap" rel="stylesheet">
+</head>
+ <body>
+ 
+    <!-- Header angepasst -->
+    <div class="header-bg">
+        <h1>Simple - HackMyVM - Easy - Bericht</h1>
+        <div class="level-container">
+            <!-- Farbe Rot wird durch CSS gesteuert -->
+            <h2>Easy</h2>
+            <div class="circle">
+                <!-- Segmente für Rot -->
+                <div class="segment segment-1"></div>
+                <div class="segment segment-2"></div>
+                <div class="segment segment-3"></div>
+                <!-- Hintergrundfarbe wird durch CSS gesteuert -->
+                <div class="inner"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <section class="tools-used">
+            <h2>Verwendete Tools</h2>
+            <div class="tools-grid">
+                <!-- Tools aus dem Bericht extrahiert -->
+                <div class="tool-item">arp-scan</div>
+                <div class="tool-item">vi</div>
+                <div class="tool-item">nikto</div>
+                <div class="tool-item">gobuster</div>
+                <div class="tool-item">dirb</div>
+                <div class="tool-item">Wappalyzer (implizit)</div>
+                <div class="tool-item">ping</div>
+                <div class="tool-item">nmap</div>
+                <div class="tool-item">enum4linux</div>
+                <div class="tool-item">crackmapexec</div>
+                <div class="tool-item">smbclient</div>
+                <div class="tool-item">msfconsole</div>
+                <div class="tool-item">echo</div>
+                <div class="tool-item">tr</div>
+                <div class="tool-item">cat</div>
+                <div class="tool-item">hydra</div>
+            </div>
+        </section>
+
+        <section class="toc">
+            <h2>Inhaltsverzeichnis</h2>
+            <ul>
+                <!-- Inhaltsverzeichnis gemäß Struktur -->
+                <li><a href="#reconnaissance">Reconnaissance</a></li>
+                <li><a href="#web-enumeration">Web Enumeration</a></li>
+                <li><a href="#smb-enumeration">SMB Enumeration</a></li>
+                <li><a href="#initial-access">Initial Access (Undokumentiert)</a></li>
+                <li><a href="#privilege-escalation">Privilege Escalation (Undokumentiert)</a></li>
+                <li><a href="#proof-of-concept">Proof of Concept (Nicht verfügbar)</a></li>
+                <li><a href="#flags">Flags</a></li>
+            </ul>
+        </section>
+
+        <section id="reconnaissance">
+            <h2>Reconnaissance</h2>
+            <p class="analysis"><strong>Analyse:</strong> Der erste Schritt ist die Identifizierung des Zielsystems im lokalen Netzwerk mittels `arp-scan -l`.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Ein Host mit der IP `192.168.2.114` und der MAC-Adresse `08:00:27:ec:93:83` (PCS Systemtechnik GmbH / Oracle VirtualBox) wird gefunden. Dies ist das Ziel "Simple".</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die IP-Adresse `192.168.2.114` für alle weiteren Scans verwenden.<br><strong>Empfehlung (Admin):</strong> Netzwerküberwachung (z.B. `arpwatch`) und Segmentierung können solche Scans erschweren.</p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">arp-scan -l</span></div>
+                    <pre>
+192.168.2.114	08:00:27:ec:93:83	PCS Systemtechnik GmbH
+                    </pre>
+                </div>
+            </div>
+
+            <p class="analysis"><strong>Analyse:</strong> Die lokale `/etc/hosts`-Datei wird bearbeitet, um der IP `192.168.2.114` den Hostnamen `simple.hmv` zuzuordnen.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Dies dient der Vereinfachung und besseren Lesbarkeit bei nachfolgenden Befehlen.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Den Hostnamen `simple.hmv` verwenden.<br><strong>Empfehlung (Admin):</strong> Lokale Konfiguration des Angreifers, keine direkte Auswirkung auf das Ziel.</p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">vi /etc/hosts</span></div>
+                    <pre>
+# Inhalt nach Bearbeitung:
+127.0.0.1	localhost
+192.168.2.114   simple.hmv
+                    </pre>
+                </div>
+            </div>
+
+            <p class="analysis"><strong>Analyse:</strong> Ein Ping-Test wird auf das Ziel durchgeführt.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Host antwortet erfolgreich. Die TTL (Time To Live) von 128 ist charakteristisch für Windows-Systeme.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Bestätigt Erreichbarkeit und liefert einen starken Hinweis auf Windows als Betriebssystem.<br><strong>Empfehlung (Admin):</strong> Stellen Sie sicher, dass ICMP-Antworten gemäß der Sicherheitsrichtlinie erlaubt oder blockiert sind.</p>
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">ping 192.168.2.114</span></div>
+                     <pre>
+PING 192.168.2.114 (192.168.2.114) 56(84) bytes of data.
+64 bytes from 192.168.2.114: icmp_seq=1 ttl=128 time=0.133 ms
+64 bytes from 192.168.2.114: icmp_seq=2 ttl=128 time=0.143 ms
+64 bytes from 192.168.2.114: icmp_seq=3 ttl=128 time=0.118 ms
+64 bytes from 192.168.2.114: icmp_seq=4 ttl=128 time=0.154 ms
+^C
+--- 192.168.2.114 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3003ms
+rtt min/avg/max/mdev = 0.118/0.137/0.154/0.013 ms
+                     </pre>
+                      <p class="comment">Anmerkung: TTL 128 deutet stark auf Windows hin.</p>
+                  </div>
+              </div>
+
+            <p class="analysis"><strong>Analyse:</strong> Ein Nmap-Scan (`-sS -sV -A -T5 -Pn --max-rate 1000`) wird auf ausgewählte Ports (445, 22, 21, 3306, 33060, 139, 80) durchgeführt.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Bestätigt Port 80 (HTTP - Microsoft IIS 10.0) sowie die SMB-Ports 139 (NetBIOS) und 445 als offen. Die anderen gescannten Ports (FTP, SSH, MySQL) sind geschlossen. Die Host-Skripte bestätigen den NetBIOS-Namen "SIMPLE" und die Workgroup "WORKGROUP". SMB Message Signing ist aktiviert, aber nicht zwingend erforderlich. Die OS-Erkennung deutet stark auf Windows Server 2019/2016 oder Windows 10 hin.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die offenen Ports 80, 139 und 445 sind die Angriffsvektoren. Konzentrieren Sie sich auf die Enumeration und mögliche Schwachstellen von IIS/ASP.NET und SMB.<br><strong>Empfehlung (Admin):</strong> Deaktivieren Sie SMB/NetBIOS, wenn nicht benötigt. Wenn benötigt, härten Sie die Konfiguration (z.B. SMB Signing erzwingen, starke Passwörter, Share-Berechtigungen einschränken). Halten Sie IIS und Windows aktuell.</p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nmap -sS -sV -A -T5 192.168.2.114 -p445,22,21,3306,33060,139,80 -Pn --max-rate 1000</span></div>
+                    <pre>
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2023-12-06 22:26 CET
+Nmap scan report for simple.hmv (192.168.2.114)
+Host is up (0.00011s latency).
+
+PORT      STATE  SERVICE       VERSION
+21/tcp    closed ftp
+22/tcp    closed ssh
+80/tcp    open   http          Microsoft IIS httpd 10.0
+|_http-title: Simple
+|_http-server-header: Microsoft-IIS/10.0
+| http-methods:
+|_  Potentially risky methods: TRACE
+139/tcp   open   netbios-ssn   Microsoft Windows netbios-ssn
+445/tcp   open   microsoft-ds?
+3306/tcp  closed mysql
+33060/tcp closed mysqlx
+MAC Address: 08:00:27:EC:93:83 (Oracle VirtualBox virtual NIC)
+Aggressive OS guesses: Microsoft Windows Server 2019 (99%), Microsoft Windows 10 1709 - 1909 (96%), Microsoft Windows 10 1709 - 1803 (93%), Microsoft Windows Server 2016 (93%), Microsoft Windows Server 2012 (92%), Microsoft Windows Longhorn (91%), Microsoft Windows Vista SP1 (91%), Microsoft Windows Server 2012 R2 Update 1 (91%), Microsoft Windows 7, Windows Server 2012, or Windows 8.1 Update 1 (91%), Microsoft Windows 10 1703 (91%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 1 hop
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_nbstat: NetBIOS name: SIMPLE, NetBIOS user: <unknown>, NetBIOS MAC: 08:00:27:ec:93:83 (Oracle VirtualBox virtual NIC)
+| smb2-time:
+|   date: 2023-12-06T21:26:51
+|_  start_date: N/A
+| smb2-security-mode:
+|   3:1:1:
+|_    Message signing enabled but not required
+
+TRACEROUTE
+HOP RTT     ADDRESS
+1   0.11 ms simple.hmv (192.168.2.114)
+
+Nmap done: 1 IP address (1 host up) scanned in 7.32 seconds
+                    </pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="web-enumeration">
+            <h2>Web Enumeration</h2>
+            <p class="analysis"><strong>Analyse:</strong> Der Webserver-Scanner `nikto` wird auf Port 80 des Ziels ausgeführt.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Nikto identifiziert Microsoft-IIS/10.0 und ASP.NET. Es meldet fehlende Sicherheitsheader (`X-Frame-Options`, `X-Content-Type-Options`) und bestätigt die ASP.NET-Version (4.0.30319). Es werden keine CGI-Verzeichnisse gefunden. Wichtig sind die gefundenen erlaubten HTTP-Methoden: `OPTIONS`, `TRACE`, `GET`, `HEAD`, `POST` und das ungewöhnliche `PTINS`.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die Bestätigung von IIS/ASP.NET lenkt den Fokus auf Windows-spezifische Web-Schwachstellen. Untersuchen Sie die riskante `TRACE`-Methode (Cross-Site Tracing) und die unbekannte `PTINS`-Methode. Beheben der Header ist Best Practice, aber oft kein direkter Exploit.<br><strong>Empfehlung (Admin):</strong> Fügen Sie die fehlenden Sicherheitsheader hinzu. Deaktivieren Sie die `TRACE`-Methode und untersuchen/deaktivieren Sie die `PTINS`-Methode in der IIS-Konfiguration.</p>
+             <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nikto -h 192.168.2.114</span></div>
+                     <pre>
+- Nikto v2.5.0
+---------------------------------------------------------------------------
++ Target IP:          192.168.2.114
++ Target Hostname:    192.168.2.114
++ Target Port:        80
++ Start Time:         2023-12-06 22:14:44 (GMT1)
+---------------------------------------------------------------------------
++ Server: Microsoft-IIS/10.0
++ /: Retrieved x-powered-by header: ASP.NET.
++ /: The anti-clickjacking X-Frame-Options header is not present. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
++ /: The X-Content-Type-Options header is not set. This could allow the user agent to render the content of the site in a different fashion to the MIME type. See: https://www.netsparker.com/web-vulnerability-scanner/vulnerabilities/missing-content-type-header/
++ /Qct8IFJt.ashx: Retrieved x-aspnet-version header: 4.0.30319.
++ No CGI Directories found (use '-C all' to force check all possible dirs)
++ OPTIONS: Allowed HTTP Methods: OPTIONS, TRACE, GET, HEAD, POST .
++ OPTIONS: Public HTTP Methods: OPTIONS, TRACE, GET, HEAD, POST .
++ 8102 requests: 0 error(s) and 6 item(s) reported on remote host
++ End Time:           2023-12-06 22:15:05 (GMT1) (21 seconds)
+---------------------------------------------------------------------------
++ 1 host(s) tested
+                     </pre> <!-- Hinweis: Nikto zeigt hier PTINS nicht explizit, aber Nmap tat es. -->
+                  </div>
+              </div>
+
+            <p class="analysis"><strong>Analyse:</strong> `gobuster` wird zur Verzeichnis- und Dateisuche auf `http://simple.hmv` eingesetzt.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Findet `index.html` (und Varianten in Großbuchstaben), `/images/` und `/fonts/` (ebenfalls case-insensitive). Viele Einträge führen zu einem `400 Bad Request`, was darauf hindeutet, dass der Server bestimmte Zeichen oder Muster in URLs nicht mag oder diese Pfade nicht existieren.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Untersuchen Sie `index.html`. Beachten Sie die Case-Insensitivität des Servers. Die 400er-Fehler sind wahrscheinlich nicht relevant.<br><strong>Empfehlung (Admin):</strong> Stellen Sie sicher, dass keine sensiblen Informationen in den gefundenen Verzeichnissen liegen.</p>
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">gobuster dir -u http://simple.hmv -x txt,php,rar,zip,tar,pub,xls,docx,doc,sql,db,mdb,asp,aspx,accdb,bat,ps1,exe,sh,py,pl,gz,jpeg,jpg,png,html,phtml,xml,csv,dll,pdf,raw,rtf,xlsx,zip,kdbx,bak,js -w "/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt"  -b '403,404' -e --no-error -k</span></div>
+                     <pre>
+http://simple.hmv/index.html           (Status: 200) [Size: 1481]
+http://simple.hmv/images               (Status: 301) [Size: 159] [--> http://simple.hmv/images/]
+http://simple.hmv/Images               (Status: 301) [Size: 159] [--> http://simple.hmv/Images/]
+http://simple.hmv/Index.html           (Status: 200) [Size: 1481]
+http://simple.hmv/fonts                (Status: 301) [Size: 158] [--> http://simple.hmv/fonts/]
+http://simple.hmv/IMAGES               (Status: 301) [Size: 159] [--> http://simple.hmv/IMAGES/]
+http://simple.hmv/INDEX.html           (Status: 200) [Size: 1481]
+http://simple.hmv/Fonts                (Status: 301) [Size: 158] [--> http://simple.hmv/Fonts/]
+[...] (Viele 400 Bad Request Fehler)
+                     </pre> <!-- Gekürzte Ausgabe -->
+                  </div>
+              </div>
+
+            <p class="analysis"><strong>Analyse:</strong> Manuelle Untersuchung der Webseite `http://simple.hmv/`.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Die Seite zeigt eine "Coming Soon"-Nachricht und erwähnt ein Team mit den Namen: `ruy`, `marcos`, `lander`, `bogo`, `vaiper`. Dies sind potenzielle Benutzernamen.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Extrahieren Sie diese Namen und verwenden Sie sie für Username-Enumeration und Brute-Force-Versuche gegen SMB.<br><strong>Empfehlung (Admin):</strong> Vermeiden Sie die Preisgabe interner Teamnamen oder Benutzernamen auf öffentlichen Seiten.</p>
+            <div class="code-block">
+                 <div class="terminal">
+                     <pre>
+# Manuelle Untersuchung von http://simple.hmv/
+
+                         Comming Soon
+
+     Our website is currently undergoing scheduled maintenance.
+     Thanks to the work team: (ruy, marcos, lander, bogo, vaiper)
+                     </pre>
+                  </div>
+              </div>
+
+             <p class="analysis"><strong>Analyse:</strong> Die auf der Webseite gefundenen Namen werden extrahiert, aufbereitet (Kommas und Leerzeichen entfernt) und in die Datei `users.txt` geschrieben. Der Inhalt wird mit `cat` überprüft.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Eine Benutzerliste wurde erfolgreich erstellt und für nachfolgende Angriffe vorbereitet.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Verwenden Sie `users.txt` mit Tools wie CrackMapExec oder Hydra.<br><strong>Empfehlung (Admin):</strong> Keine Aktion erforderlich.</p>
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">echo 'ruy, marcos, lander, bogo, vaiper' | tr "," "\n" | tr -d " " > users.txt</span></div>
+                     <pre></pre>
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">cat users.txt</span></div>
+                     <pre>
+ruy
+marcos
+lander
+bogo
+vaiper
+                     </pre>
+                  </div>
+              </div>
+
+             <p class="analysis"><strong>Analyse:</strong> `dirb` wird zur Verzeichnissuche mit der Standard-Wortliste verwendet.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Findet `/aspnet_client/` (und dessen Unterverzeichnis `/system_web/`), `/fonts/`, `/images/` und `index.html`. Bestätigt die Standardstruktur einer ASP.NET-Anwendung.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Keine neuen kritischen Verzeichnisse gefunden.<br><strong>Empfehlung (Admin):</strong> Sicherstellen, dass keine sensiblen Daten in diesen Verzeichnissen liegen.</p>
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">dirb http://simple.hmv</span></div>
+                     <pre>
+-----------------
+DIRB v2.22
+By The Dark Raver
+-----------------
+
+START_TIME: Wed Dec  6 22:15:45 2023
+URL_BASE: http://simple.hmv/
+WORDLIST_FILES: /usr/share/dirb/wordlists/common.txt
+
+-----------------
+
+GENERATED WORDS: 4612
+
+---- Scanning URL: http://simple.hmv/ ----
+==> DIRECTORY: http://simple.hmv/aspnet_client/
+==> DIRECTORY: http://simple.hmv/fonts/
+==> DIRECTORY: http://simple.hmv/images/
+==> DIRECTORY: http://simple.hmv/Images/
++ http://simple.hmv/index.html (CODE:200|SIZE:1481)
+
+---- Entering directory: http://simple.hmv/aspnet_client/ ----
+==> DIRECTORY: http://simple.hmv/aspnet_client/system_web/
+
+[...] (Keine weiteren relevanten Funde)
+
+-----------------
+END_TIME: Wed Dec  6 22:16:42 2023
+DOWNLOADED: 27672 - FOUND: 1
+                     </pre> <!-- Gekürzte Ausgabe -->
+                  </div>
+              </div>
+
+             <p class="analysis"><strong>Analyse:</strong> Ausgabe eines Web-Technologie-Erkennungstools (wie Wappalyzer) wird angezeigt.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Bestätigt Google Font API, Ionicons, Microsoft ASP.NET, IIS 10.0 und Windows Server als Technologien.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Bestätigt den Technologie-Stack für gezielte Schwachstellensuche.<br><strong>Empfehlung (Admin):</strong> Technologien aktuell halten.</p>
+            <div class="code-block">
+                 <div class="terminal">
+                     <pre>
+# Wappalyzer (oder ähnliches Tool) Ergebnis:
+
+Schrift Script:
+....................
+Google Font API
+Ionicons
+
+Web Frameworks:
+....................
+Microsoft ASP.NET
+
+Web Server:
+....................
+IIS 10.0
+
+Betriebssysteme:
+....................
+Windows Server
+                     </pre>
+                  </div>
+              </div>
+        </section>
+
+        <section id="smb-enumeration">
+            <h2>SMB Enumeration</h2>
+            <p class="analysis"><strong>Analyse:</strong> Das Tool `enum4linux` wird mit der Option `-a` (alle Checks) auf das Ziel ausgeführt, um SMB/NetBIOS-Informationen zu sammeln.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Enum4linux erhält den Workgroup-Namen ("WORKGROUP") und den NetBIOS-Namen ("SIMPLE"). Es scheitert jedoch beim Aufbau einer Null Session (`Server doesn't allow session using username '', password ''`), weshalb die meisten weiteren Tests abgebrochen werden.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Anonymous/Null Session Enumeration ist nicht möglich. Authentifizierte Enumeration mit gefundenen oder geratenen Zugangsdaten ist erforderlich.<br><strong>Empfehlung (Admin):</strong> Das Deaktivieren von Null Sessions ist eine gute Sicherheitsmaßnahme.</p>
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">enum4linux -a 192.168.2.114</span></div>
+                     <pre>
+Starting enum4linux v0.9.1 ( http://labs.portcullis.co.uk/application/enum4linux/ ) on Wed Dec  6 22:27:27 2023
+
+ ==========================
+|    Target Information    |
+ ==========================
+Target ........... 192.168.2.114
+RID Range ........ 500-550,1000-1050
+Username ......... ''
+Password ......... ''
+Known Usernames .. administrator, guest, krbtgt, domain admins, root, bin, none
+
+
+ ==========================================
+|    Enumerating Workgroup/Domain on 192.168.2.114    |
+ ==========================================
+
+[+] Got domain/workgroup name: WORKGROUP
+
+
+ ======================================
+|    Nbtstat Information for 192.168.2.114    |
+ ======================================
+Looking up status of 192.168.2.114
+	SIMPLE          <20> -         B <ACTIVE>  File Server Service
+	SIMPLE          <00> -         B <ACTIVE>  Workstation Service
+	WORKGROUP       <00> - <GROUP> B <ACTIVE>  Domain/Workgroup Name
+
+	MAC Address = 08-00-27-EC-93-83
+
+ ==================================
+|    Session Check on 192.168.2.114    |
+ ==================================
+
+[E] Server doesn't allow session using username '', password ''. Aborting remainder of tests.
+                     </pre>
+                  </div>
+              </div>
+
+            <p class="analysis"><strong>Analyse:</strong> CrackMapExec (`crackmapexec smb`) wird verwendet, um zu versuchen, sich als Benutzer `bogo` mit den Passwörtern aus der zuvor erstellten `users.txt` am SMB-Dienst anzumelden.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Alle Login-Versuche scheitern (`STATUS_LOGIN_FAILURE`), außer der Kombination `bogo`:`bogo`. Diese liefert den Status `STATUS_PASSWORD_EXPIRED`. Das bedeutet, das Passwort ist korrekt, aber abgelaufen und muss geändert werden.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Das Passwort `bogo` für den Benutzer `bogo` ist sehr wahrscheinlich korrekt. Obwohl es abgelaufen ist, könnte es für andere (nicht vorhandene) Dienste funktionieren oder es gibt Wege, die Passwortänderung zu erzwingen (z.B. über RDP, falls offen). Da nur SMB und HTTP offen sind, ist der Nutzen begrenzt, aber die Information ist wichtig.<br><strong>Empfehlung (Admin):</strong> Erzwingen Sie starke Passwörter und verbieten Sie triviale Passwörter wie den Benutzernamen. Überprüfen Sie die Passwortablauf-Richtlinien.</p>
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">crackmapexec smb 192.168.2.114 -u bogo -p users.txt</span></div>
+                     <pre>
+[*] First time use detected
+[*] Creating home directory structure
+[*] Creating default workspace
+[*] Initializing FTP protocol database
+[*] Initializing RDP protocol database
+[*] Initializing WINRM protocol database
+[*] Initializing SMB protocol database
+[*] Initializing LDAP protocol database
+[*] Initializing SSH protocol database
+[*] Initializing MSSQL protocol database
+[*] Copying default configuration file
+[*] Generating SSL certificate
+SMB         192.168.2.114   445    SIMPLE           [*] Windows 10.0 Build 17763 x64 (name:SIMPLE) (domain:Simple) (signing:False) (SMBv1:False)
+SMB         192.168.2.114   445    SIMPLE           [-] Simple\bogo:ruy STATUS_LOGON_FAILURE
+SMB         192.168.2.114   445    SIMPLE           [-] Simple\bogo:marcos STATUS_LOGON_FAILURE
+SMB         192.168.2.114   445    SIMPLE           [-] Simple\bogo:lander STATUS_LOGON_FAILURE
+SMB         192.168.2.114   445    SIMPLE           [-] Simple\bogo:<span class="password">bogo</span> STATUS_PASSWORD_EXPIRED
+SMB         192.168.2.114   445    SIMPLE           [-] Simple\bogo:vaiper STATUS_LOGON_FAILURE
+                     </pre>
+                  </div>
+              </div>
+
+            <p class="analysis"><strong>Analyse:</strong> Erneuter Versuch mit CrackMapExec, diesmal nur mit dem Passwort `bogo`, um Shares aufzulisten (`--shares`).</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Scheitert weiterhin mit `STATUS_PASSWORD_EXPIRED`. Das Auflisten von Shares ist mit dem abgelaufenen Passwort nicht möglich.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Der SMB-Vektor scheint mit diesem Benutzer/Passwort blockiert zu sein. Konzentrieren Sie sich auf andere Methoden.<br><strong>Empfehlung (Admin):</strong> Keine neuen Erkenntnisse.</p>
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">crackmapexec smb 192.168.2.114 -u bogo -p bogo --shares</span></div>
+                     <pre>
+SMB         192.168.2.114   445    SIMPLE           [*] Windows 10.0 Build 17763 x64 (name:SIMPLE) (domain:Simple) (signing:False) (SMBv1:False)
+SMB         192.168.2.114   445    SIMPLE           [-] Simple\bogo:<span class="password">bogo</span> STATUS_PASSWORD_EXPIRED
+                     </pre>
+                  </div>
+              </div>
+
+            <p class="analysis"><strong>Analyse:</strong> Versuch, Shares anonym mit `smbclient -L` aufzulisten.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Scheitert mit `NT_STATUS_ACCESS_DENIED`.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Bestätigt, dass anonyme Share-Enumeration nicht erlaubt ist.<br><strong>Empfehlung (Admin):</strong> Korrekte Konfiguration.</p>
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">smbclient -L \\\\192.168.2.114</span></div>
+                     <pre>Password for [WORKGROUP\root]:</pre> <span class="command"># (Enter gedrückt)</span>
+                     <pre>session setup failed: NT_STATUS_ACCESS_DENIED</pre>
+                  </div>
+              </div>
+
+            <p class="analysis"><strong>Analyse:</strong> Das Metasploit-Modul `auxiliary/scanner/smb/smb_login` wird verwendet, um die Benutzer aus `users.txt` zu testen, wobei jeweils der Benutzername als Passwort verwendet wird (`set user_as_pass true`).</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Bestätigt das Ergebnis von CrackMapExec: Nur der Login `bogo`:`bogo` ist erfolgreich (aber wahrscheinlich abgelaufen).</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Bestätigt die Gültigkeit der `bogo:bogo`-Kombination, aber auch deren Begrenzung durch den Ablaufstatus.<br><strong>Empfehlung (Admin):</strong> Siehe Empfehlungen zu CrackMapExec.</p>
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">msfconsole -q</span></div>
+                     <div class="prompt metasploit-prompt">msf6 > <span class="command">use auxiliary/scanner/smb/smb_login</span></div>
+                     <div class="prompt metasploit-prompt">msf6 auxiliary(scanner/smb/smb_login) > <span class="command">set rhost 192.168.2.114</span></div>
+                     <pre>rhost => 192.168.2.114</pre>
+                     <div class="prompt metasploit-prompt">msf6 auxiliary(scanner/smb/smb_login) > <span class="command">set user_file users.txt</span></div>
+                     <pre>user_file => users.txt</pre>
+                     <div class="prompt metasploit-prompt">msf6 auxiliary(scanner/smb/smb_login) > <span class="command">set user_as_pass true</span></div>
+                     <pre>user_as_pass => true</pre>
+                     <div class="prompt metasploit-prompt">msf6 auxiliary(scanner/smb/smb_login) > <span class="command">run</span></div>
+                     <pre>
+[*] 192.168.2.114:445     - 192.168.2.114:445 - Starting SMB login bruteforce
+[-] 192.168.2.114:445     - 192.168.2.114:445 - Failed: '.\ruy:ruy',
+[!] 192.168.2.114:445     - No active DB -- Credential data will not be saved!
+[-] 192.168.2.114:445     - 192.168.2.114:445 - Failed: '.\marcos:marcos',
+[-] 192.168.2.114:445     - 192.168.2.114:445 - Failed: '.\lander:lander',
+[+] 192.168.2.114:445     - 192.168.2.114:445 - Success: '.\bogo:<span class="password">bogo</span>'
+[-] 192.168.2.114:445     - 192.168.2.114:445 - Failed: '.\vaiper:vaiper',
+[*] 192.168.2.114:445     - Scanned 1 of 1 hosts (100% complete)
+[*] Auxiliary module execution completed
+                     </pre>
+                      <div class="prompt metasploit-prompt">msf6 auxiliary(scanner/smb/smb_login) > <span class="command"></span></div>
+                  </div>
+              </div>
+        </section>
+
+        <!-- Folgende Abschnitte basieren auf externen Informationen, da der Text hier endet -->
+        <section id="initial-access">
+            <h2>Initial Access (Undokumentiert)</h2>
+            <p class="analysis"><strong>Analyse:</strong> Der bereitgestellte Text endet nach der SMB-Enumeration. Es werden keine Befehle oder Methoden gezeigt, die zum Erhalt des initialen Zugriffs auf das System führen.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Die Dokumentation des Initial Access fehlt vollständig. Der Weg vom externen Scan zum ersten Shell-Zugriff ist nicht nachvollziehbar.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Dokumentieren Sie immer die Schritte, die zum Initial Access führen (z.B. Ausnutzung einer Web-Schwachstelle, erfolgreicher Brute-Force-Angriff auf einen Dienst, Phishing).<br><strong>Empfehlung (Admin):</strong> Eine Untersuchung müsste die Logs von IIS und SMB prüfen, um den tatsächlichen Angriffsvektor zu identifizieren.</p>
+             <p class="comment">Anmerkung: Die Schritte zum Initial Access wurden im bereitgestellten Text nicht dokumentiert.</p>
+       </section>
+
+        <section id="privilege-escalation">
+            <h2>Privilege Escalation (Undokumentiert)</h2>
+             <p class="analysis"><strong>Analyse:</strong> Der bereitgestellte Text enthält keine Informationen darüber, wie nach dem (angenommenen) Initial Access höhere Rechte (z.B. Administrator) erlangt wurden.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Die Dokumentation der Privilegieneskalation fehlt vollständig.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Dokumentieren Sie immer die Methoden zur Privilegieneskalation (z.B. Ausnutzung von Fehlkonfigurationen, Kernel-Exploits, unsichere Dienste, Passwort-Wiederverwendung).<br><strong>Empfehlung (Admin):</strong> Eine Untersuchung müsste Systemkonfigurationen, installierte Software und Benutzerrechte prüfen, um den Eskalationspfad zu finden.</p>
+             <p class="comment">Anmerkung: Die Schritte zur Privilegieneskalation wurden im bereitgestellten Text nicht dokumentiert.</p>
+             <p class="comment">Zusatzinformation aus dem Text: "Die Box lässt mich nicht in SMB Channel switchen / Fehler ist Password abgelaufen". Dies bestätigt, dass der `bogo:bogo`-Account aufgrund des abgelaufenen Passworts wahrscheinlich nicht direkt für den Initial Access oder weitere SMB-Aktionen genutzt werden konnte.</p>
+       </section>
+
+        <section id="proof-of-concept">
+            <h2>Proof of Concept (Nicht verfügbar)</h2>
+            <p class="analysis"><strong>Analyse:</strong> Da die Schritte für Initial Access und Privilegieneskalation nicht dokumentiert sind, kann kein spezifischer Proof of Concept erstellt werden.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Das Fehlen eines POC erschwert die Nachvollziehbarkeit und Validierung der gefundenen Schwachstellen.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Erstellen Sie immer einen POC für die kritischsten gefundenen Schwachstellen.<br><strong>Empfehlung (Admin):</strong> Die Behebung muss sich auf die (vermuteten) Schwachstellen konzentrieren, die zu den Flag-Funden geführt haben.</p>
+            <p class="comment">Anmerkung: Ein Proof of Concept kann nicht erstellt werden, da die relevanten Schritte im bereitgestellten Text fehlen.</p>
+       </section>
+
+        <section id="flags">
+             <!-- Flag-Container für Zentrierung und Styling -->
+            <div class="flag-container">
+                <h2 class="flag-heading">Flags</h2>
+                <p class="comment">Anmerkung: Die Flags wurden direkt im Text bereitgestellt, die Befehle zum Auslesen wurden nicht gezeigt.</p>
+                <!-- User Flag Eintrag -->
+                <div class="flag-entry">
+                    <div class="flag-command">type user.txt</div> <!-- Befehl für Windows angenommen -->
+                    <div class="flag-value"><span class="password">SIMPLE{ASPXT0SH311}</span></div>
+                </div>
+
+                <!-- Root Flag Eintrag -->
+                <div class="flag-entry">
+                    <div class="flag-command">type root.txt</div> <!-- Befehl für Windows angenommen -->
+                    <div class="flag-value"><span class="password">SIMPLE{S31MP3R50N4T3PR1V1L363}</span></div>
+                </div>
+            </div>
+        </section>
+ 
+
+    <footer class="footer">
+        <p>DarkSpirit - Cyber Security Reports</p>
+        <!-- Datum extrahiert aus der ersten Nikto Zeitangabe -->
+        <p>Berichtsdatum: 2023-12-06</p>
+    </footer>
+</body>
+</html>
